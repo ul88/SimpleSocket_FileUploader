@@ -8,7 +8,6 @@
 #pragma comment(lib,"ws2_32.lib")
 #define SERVERIP "127.0.0.1"
 #define BUFSIZE 1024
-#define SERVERPORT 4444
 using namespace std;
 
 const char* directoryPath = "download_file\\";
@@ -18,6 +17,7 @@ void mkdir() {
 	if (!filesystem::exists(direct))
 		filesystem::create_directory(direct);
 }
+
 
 void recv_file(SOCKET sock) {
 	char buf[BUFSIZE];
@@ -137,7 +137,7 @@ int main()
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) return 1;
 
 	SOCKET sock{ socket(AF_INET, SOCK_STREAM, 0) };
-	sockaddr_in addr{ AF_INET, htons(SERVERPORT) };
+	sockaddr_in addr{ AF_INET, htons(4444) };
 	inet_pton(AF_INET, SERVERIP, &addr.sin_addr);
 	if (connect(sock, (sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) return 1;
 

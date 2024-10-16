@@ -10,7 +10,6 @@
 #include<io.h>
 #pragma comment(lib,"ws2_32.lib")
 
-#define SERVERPORT 4444
 #define BUFSIZE 1024
 
 using namespace std;
@@ -196,7 +195,7 @@ int main()
 	SOCKET server_sock{ socket(AF_INET, SOCK_STREAM, 0)};
 	if (server_sock == INVALID_SOCKET) return 1;
 
-	sockaddr_in sock_addr{ AF_INET, htons(SERVERPORT) };
+	sockaddr_in sock_addr{ AF_INET, htons(4444) };
 	sock_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	
 	if (::bind(server_sock, (sockaddr*)&sock_addr, sizeof(sock_addr)) == SOCKET_ERROR) return 1;
