@@ -61,7 +61,7 @@ void send_file(SOCKET sock, string path) {
 	int file_size = is.tellg();
 	is.seekg(0, is.beg);
 
-	send(sock, to_string(file_size).c_str(), strlen(to_string(file_size).c_str()), 0);
+	send(sock, (char*)&file_size, sizeof(int), 0);
 	
 	//파일 크기 전송 완료 신호 보냄
 	//recv(sock, &sign, 1, 0);

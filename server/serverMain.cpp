@@ -89,15 +89,13 @@ void recv_file_clientToServer(SOCKET client_sock, sockaddr_in clientaddr) {
 	}
 	
 	//파일 사이즈 받아오기
-	char file_size_ch[BUFSIZE];
-	ret = recv(client_sock, file_size_ch, BUFSIZE, 0);
-	temp = file_size_ch;
-	int file_size = stoi(temp);
+	int file_size;
+	ret = recv(client_sock, (char*)&file_size, sizeof(int), 0);
 
 	char* file_data = new char[file_size];
 	
 	cout << "파일 사이즈 전달 완료 [" << file_size << "]" << endl;
-	//send(client_sock, "1", 1, 0);
+	
 	ret = recv(client_sock, file_data, file_size, MSG_WAITALL);
 
 	out.write((char*)file_data, file_size);
