@@ -18,12 +18,6 @@ using namespace std;
 const char* directoryPath = "download_file\\";
 vector<string> paths;
 
-void mkdir() {
-	const char* direct = "download_file";
-	if(!filesystem::exists(direct))
-		filesystem::create_directory(direct);
-}
-
 void init_paths() {
 
 	const char* direct = "download_file";
@@ -185,7 +179,6 @@ void recv_file(SOCKET client_sock, sockaddr_in clientaddr) {
 }
 int main()
 {	
-	mkdir();
 	init_paths();
 
 	WSADATA wsa;

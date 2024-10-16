@@ -13,13 +13,6 @@ using namespace std;
 
 const char* directoryPath = "download_file\\";
 
-void mkdir() {
-	const char* direct = "download_file";
-	if (!filesystem::exists(direct))
-		filesystem::create_directory(direct);
-}
-
-
 void recv_file(SOCKET sock) {
 	char buf[BUFSIZE];
 	recv(sock, buf, BUFSIZE, 0);
@@ -132,8 +125,6 @@ void client_file_delete() {
 
 int main()
 {
-	mkdir();
-
 	WSADATA wsa;
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) return 1;
 
