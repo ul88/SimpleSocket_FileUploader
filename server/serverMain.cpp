@@ -97,12 +97,12 @@ void recv_file_clientToServer(SOCKET client_sock, sockaddr_in clientaddr) {
 	char* file_data = new char[file_size];
 	
 	cout << "파일 사이즈 전달 완료 [" << file_size << "]" << endl;
-	send(client_sock, "1", 1, 0);
-	ret = recv(client_sock, file_data, file_size, 0);
+	//send(client_sock, "1", 1, 0);
+	ret = recv(client_sock, file_data, file_size, MSG_WAITALL);
 
 	out.write((char*)file_data, file_size);
 
-	send(client_sock, "1", 1, 0);
+	//send(client_sock, "1", 1, 0);
 	char addr[INET_ADDRSTRLEN];
 	inet_ntop(AF_INET, &clientaddr.sin_addr, addr, sizeof(addr));
 	cout << "[TCP 서버] " << addr << ":" <<
@@ -131,40 +131,40 @@ void recv_file(SOCKET client_sock, sockaddr_in clientaddr) {
 		case 2:
 			temp = to_string(paths.size());
 			send(client_sock, temp.c_str(), temp.length() + 1, 0);
-			recv(client_sock, &sign, 1, 0);
+			//recv(client_sock, &sign, 1, 0);
 
 			for (int i = 0;i < paths.size();i++) {
 				temp = to_string(i + 1) + " : " + paths[i];
 				send(client_sock, temp.c_str(), temp.length() + 1, 0);
-				recv(client_sock, &sign, 1, 0);
+				//recv(client_sock, &sign, 1, 0);
 			}
 			ret = recv(client_sock, buf, 1024, 0);
-			send(client_sock, "1", 1, 0);
+			//send(client_sock, "1", 1, 0);
 			num = atoi(buf);
 			send_file(client_sock, num, clientaddr);
 			break;
 		case 3:
 			temp = to_string(paths.size());
 			send(client_sock, temp.c_str(), temp.length() + 1, 0);
-			recv(client_sock, &sign, 1, 0);
+			//recv(client_sock, &sign, 1, 0);
 			for (int i = 0;i < paths.size();i++) {
 				temp = to_string(i + 1) + " : " + paths[i];
 				send(client_sock, temp.c_str(), temp.length() + 1, 0);
-				recv(client_sock, &sign, 1, 0);
+				//recv(client_sock, &sign, 1, 0);
 			}
 			break;
 		case 4:
 			temp = to_string(paths.size());
 			send(client_sock, temp.c_str(), temp.length() + 1, 0);
-			recv(client_sock, &sign, 1, 0);
+			//recv(client_sock, &sign, 1, 0);
 
 			for (int i = 0;i < paths.size();i++) {
 				temp = to_string(i + 1) + " " + paths[i];
 				send(client_sock, temp.c_str(), temp.length() + 1, 0);
-				recv(client_sock, &sign, 1, 0);
+				//recv(client_sock, &sign, 1, 0);
 			}
 			ret = recv(client_sock, buf, BUFSIZE, 0);
-			send(client_sock, "1", 1, 0);
+			//send(client_sock, "1", 1, 0);
 			num = atoi(buf);
 			if (::remove((directoryPath + paths[num - 1]).c_str()) == 0) {
 				paths.erase(paths.begin() + (num - 1));

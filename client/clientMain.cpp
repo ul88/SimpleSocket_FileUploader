@@ -63,7 +63,7 @@ void send_file(SOCKET sock, string path) {
 	send(sock, to_string(file_size).c_str(), strlen(to_string(file_size).c_str()), 0);
 	
 	//파일 크기 전송 완료 신호 보냄
-	recv(sock, &sign, 1, 0);
+	//recv(sock, &sign, 1, 0);
 	cout << "파일 크기 전송 완료 [" << file_size <<"]" << endl;
 
 	char* file_data = new char[file_size];
@@ -71,7 +71,7 @@ void send_file(SOCKET sock, string path) {
 
 	send(sock, (const char*)file_data, file_size, 0);
 
-	recv(sock, &sign, 1, 0);
+	//recv(sock, &sign, 1, 0);
 	cout << "서버로 파일 전송 성공"<<endl;
 
 	is.close();
@@ -176,7 +176,7 @@ int main()
 			cout << "다운로드하고 싶은 파일을 선택해주세요: ";
 			cin >> num;
 			send(sock, to_string(num).c_str(), to_string(num).length() + 1, 0);
-			recv(sock, &sign, 1, 0);
+			
 			recv_file(sock);
 			break;
 		case 3:
@@ -190,7 +190,7 @@ int main()
 			cin >> num;
 			temp = to_string(num);
 			send(sock, temp.c_str(), temp.length() + 1, 0);
-			recv(sock, &sign, 1, 0);
+			
 			break;
 		case 5:
 			client_file_list();
