@@ -7,6 +7,7 @@
 #include<ws2tcpip.h>
 #pragma comment(lib,"ws2_32.lib")
 #define SERVERIP "127.0.0.1"
+#define SERVERPORT 4444
 #define BUFSIZE 1024
 using namespace std;
 
@@ -137,7 +138,7 @@ int main()
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) return 1;
 
 	SOCKET sock{ socket(AF_INET, SOCK_STREAM, 0) };
-	sockaddr_in addr{ AF_INET, htons(4444) };
+	sockaddr_in addr{ AF_INET, htons(SERVERPORT) };
 	inet_pton(AF_INET, SERVERIP, &addr.sin_addr);
 	if (connect(sock, (sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) return 1;
 
