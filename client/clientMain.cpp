@@ -25,11 +25,9 @@ void recv_file(SOCKET sock) {
 	send(sock, "1", 1, 0);
 	string file_name = buf;
 
-	recv(sock, buf, BUFSIZE, 0);
+	int file_size;
+	recv(sock, (char*)&file_size, sizeof(int), 0);
 	send(sock, "1", 1, 0);
-
-	string temp = buf;
-	int file_size = stoi(temp);
 
 	char* file_data = new char[file_size];
 	recv(sock, file_data, file_size, 0);
@@ -60,18 +58,19 @@ void send_file(SOCKET sock, string path) {
 	int file_size = is.tellg();
 	is.seekg(0, is.beg);
 
-	send(sock, to_string(file_size).c_str(), strlen(to_string(file_size).c_str()), 0);
+	send(sock, (char*)&file_size, sizeof(int), 0);
 	
 	//파일 크기 전송 완료 신호 보냄
 	recv(sock, &sign, 1, 0);
+	
 	cout << "파일 크기 전송 완료 [" << file_size <<"]" << endl;
 
 	char* file_data = new char[file_size];
 	is.read(file_data, file_size);
 
 	send(sock, (const char*)file_data, file_size, 0);
-
 	recv(sock, &sign, 1, 0);
+	
 	cout << "서버로 파일 전송 성공"<<endl;
 
 	is.close();

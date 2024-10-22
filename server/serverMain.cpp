@@ -3,6 +3,7 @@
 #include<iostream>
 #include<winsock2.h>
 #include<ws2tcpip.h>
+#include<algorithm>
 #include<string>
 #include<sstream>
 #include<vector>
@@ -17,6 +18,7 @@ using namespace std;
 
 const char* directoryPath = "download_file\\";
 vector<string> paths;
+bool endflag = true;
 
 void mkdir() {
 	const char* direct = "download_file";
@@ -25,7 +27,6 @@ void mkdir() {
 }
 
 void init_paths() {
-
 	const char* direct = "download_file";
 
 	for (auto iter : filesystem::directory_iterator(direct)) {
@@ -50,8 +51,7 @@ void send_file(SOCKET client_sock, int idx, sockaddr_in clientaddr) {
 	int file_size = is.tellg();
 	is.seekg(0, is.beg);
 
-	send(client_sock, to_string(file_size).c_str(), 
-		to_string(file_size).length() + 1, 0);
+	send(client_sock, (char*)&file_size, sizeof(int), 0);
 	recv(client_sock, &sign, 1, 0);
 
 	char* file_data = new char[file_size];
@@ -80,6 +80,18 @@ void recv_file_clientToServer(SOCKET client_sock, sockaddr_in clientaddr) {
 	istringstream ss(temp);
 	string path;
 	while (getline(ss, path, '\\'));
+	if (find(paths.begin(), paths.end(), path) != paths.end()) {
+		int idx = 0;
+		temp = path;
+		while (find(paths.begin(), paths.end(), temp) != paths.end()) {
+			temp = path;
+			temp.insert(temp.length()-4, to_string(++idx));
+		}
+		path = temp;
+
+		cout << "중복되는 파일명이 존재합니다." << endl;
+		cout << "파일명이 " << path << "로 변경됩니다." << endl;
+	}
 	paths.push_back(path);
 
 	ofstream out(directoryPath + path, ios::out | ios::binary);
@@ -89,16 +101,14 @@ void recv_file_clientToServer(SOCKET client_sock, sockaddr_in clientaddr) {
 	}
 	
 	//파일 사이즈 받아오기
-	char file_size_ch[BUFSIZE];
-	ret = recv(client_sock, file_size_ch, BUFSIZE, 0);
-	temp = file_size_ch;
-	int file_size = stoi(temp);
+	int file_size;
+	ret = recv(client_sock, (char*)&file_size, sizeof(int), MSG_WAITALL);
 
 	char* file_data = new char[file_size];
 	
 	cout << "파일 사이즈 전달 완료 [" << file_size << "]" << endl;
 	send(client_sock, "1", 1, 0);
-	ret = recv(client_sock, file_data, file_size, 0);
+	ret = recv(client_sock, file_data, file_size, MSG_WAITALL);
 
 	out.write((char*)file_data, file_size);
 
@@ -185,6 +195,23 @@ void recv_file(SOCKET client_sock, sockaddr_in clientaddr) {
 		}
 	}
 }
+
+void acceptClient(SOCKET server_sock) {
+	while (endflag) {
+		SOCKET client_sock;
+		sockaddr_in clientaddr;
+		int addrlen = sizeof(clientaddr);
+		client_sock = accept(server_sock, (sockaddr*)&clientaddr, &addrlen);
+		if (client_sock == INVALID_SOCKET) return;
+
+		char addr[INET_ADDRSTRLEN];
+		inet_ntop(AF_INET, &clientaddr.sin_addr, addr, sizeof(addr));
+		cout << endl << "[TCP 서버] 클라이언트 접속 : IP 주소=" << addr
+			<< ", 포트 번호=" << ntohs(clientaddr.sin_port) << endl;
+
+		thread(recv_file, client_sock, clientaddr).detach();
+	}
+}
 int main()
 {	
 	mkdir();
@@ -202,20 +229,8 @@ int main()
 	if (::bind(server_sock, (sockaddr*)&sock_addr, sizeof(sock_addr)) == SOCKET_ERROR) return 1;
 	if (listen(server_sock, SOMAXCONN) == SOCKET_ERROR) return 1;
 
-	SOCKET client_sock;
-	sockaddr_in clientaddr;
-	int addrlen;
-
-	addrlen = sizeof(clientaddr);
-	client_sock = accept(server_sock, (sockaddr*)&clientaddr, &addrlen);
-	if (client_sock == INVALID_SOCKET) return 1;
-	
-	char addr[INET_ADDRSTRLEN];
-	inet_ntop(AF_INET, &clientaddr.sin_addr, addr, sizeof(addr));
-	cout << endl << "[TCP 서버] 클라이언트 접속 : IP 주소=" << addr
-		<< ", 포트 번호=" << ntohs(clientaddr.sin_port) << endl;
-
-	thread th(recv_file, client_sock, clientaddr);
+	//thread th(recv_file, client_sock, clientaddr);
+	thread th(acceptClient, server_sock);
 
 	bool serverFlag = true;
 	while (serverFlag) {
@@ -256,6 +271,7 @@ int main()
 			}
 		}
 		else if (command == 3) {
+			endflag = false;
 			break;
 		}
 	}
