@@ -3,6 +3,7 @@
 #include<iostream>
 #include<winsock2.h>
 #include<ws2tcpip.h>
+#include<algorithm>
 #include<string>
 #include<sstream>
 #include<vector>
@@ -17,9 +18,9 @@ using namespace std;
 
 const char* directoryPath = "download_file\\";
 vector<string> paths;
+bool endflag = true;
 
 void init_paths() {
-
 	const char* direct = "download_file";
 
 	for (auto iter : filesystem::directory_iterator(direct)) {
@@ -33,7 +34,7 @@ void send_file(SOCKET client_sock, int idx, sockaddr_in clientaddr) {
 	char sign;
 	ifstream is(directoryPath + paths[idx - 1], ios::in | ios::binary);
 	if (!is) {
-		cout << "ÆÄÀÏ ¿­±â ¿À·ù";
+		cout << "íŒŒì¼ ì—´ê¸° ì˜¤ë¥˜";
 		return;
 	}
 
@@ -44,8 +45,7 @@ void send_file(SOCKET client_sock, int idx, sockaddr_in clientaddr) {
 	int file_size = is.tellg();
 	is.seekg(0, is.beg);
 
-	send(client_sock, to_string(file_size).c_str(), 
-		to_string(file_size).length() + 1, 0);
+	send(client_sock, (char*)&file_size, sizeof(int), 0);
 	recv(client_sock, &sign, 1, 0);
 
 	char* file_data = new char[file_size];
@@ -55,9 +55,9 @@ void send_file(SOCKET client_sock, int idx, sockaddr_in clientaddr) {
 	
 	char addr[INET_ADDRSTRLEN];
 	inet_ntop(AF_INET, &clientaddr.sin_addr, addr, sizeof(addr));
-	cout << "[TCP ¼­¹ö] "<< addr << ":" <<
-		ntohs(clientaddr.sin_port) << "·Î " << 
-		paths[idx - 1] << "¸¦ Àü¼ÛÇß½À´Ï´Ù." << endl;
+	cout << "[TCP ì„œë²„] "<< addr << ":" <<
+		ntohs(clientaddr.sin_port) << "ë¡œ " << 
+		paths[idx - 1] << "ë¥¼ ì „ì†¡í–ˆìŠµë‹ˆë‹¤." << endl;
 
 	is.close();
 	delete[] file_data;
@@ -69,27 +69,39 @@ void recv_file_clientToServer(SOCKET client_sock, sockaddr_in clientaddr) {
 	ret = recv(client_sock, buf, BUFSIZE, 0);
 	if (ret == SOCKET_ERROR || ret == 0) return;
 
-	//µð·ºÅä¸®¸¦ ÀüºÎ ÀÚ¸£°í ÆÄÀÏ¸í¸¸ ³²±è
+	//ë””ë ‰í† ë¦¬ë¥¼ ì „ë¶€ ìžë¥´ê³  íŒŒì¼ëª…ë§Œ ë‚¨ê¹€
 	string temp = buf;
 	istringstream ss(temp);
 	string path;
 	while (getline(ss, path, '\\'));
+	if (find(paths.begin(), paths.end(), path) != paths.end()) {
+		int idx = 0;
+		temp = path;
+		while (find(paths.begin(), paths.end(), temp) != paths.end()) {
+			temp = path;
+			temp.insert(temp.length()-4, to_string(++idx));
+		}
+		path = temp;
+
+		cout << "ì¤‘ë³µë˜ëŠ” íŒŒì¼ëª…ì´ ì¡´ìž¬í•©ë‹ˆë‹¤." << endl;
+		cout << "íŒŒì¼ëª…ì´ " << path << "ë¡œ ë³€ê²½ë©ë‹ˆë‹¤." << endl;
+	}
 	paths.push_back(path);
 
 	ofstream out(directoryPath + path, ios::out | ios::binary);
 	if (!out) {
-		cout << "ÆÄÀÏ ¿­±â ½ÇÆÐ" << endl;
+		cout << "íŒŒì¼ ì—´ê¸° ì‹¤íŒ¨" << endl;
 		return;
 	}
 	
-	//ÆÄÀÏ »çÀÌÁî ¹Þ¾Æ¿À±â
+	//íŒŒì¼ ì‚¬ì´ì¦ˆ ë°›ì•„ì˜¤ê¸°
 	int file_size;
-	ret = recv(client_sock, (char*)&file_size, sizeof(int), 0);
+	ret = recv(client_sock, (char*)&file_size, sizeof(int), MSG_WAITALL);
 
 	char* file_data = new char[file_size];
 	
-	cout << "ÆÄÀÏ »çÀÌÁî Àü´Þ ¿Ï·á [" << file_size << "]" << endl;
-	
+	cout << "íŒŒì¼ ì‚¬ì´ì¦ˆ ì „ë‹¬ ì™„ë£Œ [" << file_size << "]" << endl;
+	send(client_sock, "1", 1, 0);
 	ret = recv(client_sock, file_data, file_size, MSG_WAITALL);
 
 	out.write((char*)file_data, file_size);
@@ -97,8 +109,8 @@ void recv_file_clientToServer(SOCKET client_sock, sockaddr_in clientaddr) {
 	//send(client_sock, "1", 1, 0);
 	char addr[INET_ADDRSTRLEN];
 	inet_ntop(AF_INET, &clientaddr.sin_addr, addr, sizeof(addr));
-	cout << "[TCP ¼­¹ö] " << addr << ":" <<
-		ntohs(clientaddr.sin_port) << "°¡ ¼­¹ö·Î "<<path<<"¸¦ Àü¼ÛÇß½À´Ï´Ù."<<endl;
+	cout << "[TCP ì„œë²„] " << addr << ":" <<
+		ntohs(clientaddr.sin_port) << "ê°€ ì„œë²„ë¡œ "<<path<<"ë¥¼ ì „ì†¡í–ˆìŠµë‹ˆë‹¤."<<endl;
 	
 	out.close();
 	delete[] file_data;
@@ -160,21 +172,38 @@ void recv_file(SOCKET client_sock, sockaddr_in clientaddr) {
 			num = atoi(buf);
 			if (::remove((directoryPath + paths[num - 1]).c_str()) == 0) {
 				paths.erase(paths.begin() + (num - 1));
-				cout << "ÆÄÀÏ »èÁ¦¿¡ ¼º°øÇß½À´Ï´Ù." << endl;
+				cout << "íŒŒì¼ ì‚­ì œì— ì„±ê³µí–ˆìŠµë‹ˆë‹¤." << endl;
 			}
 			else {
-				cout << "ÆÄÀÏ »èÁ¦¿¡ ½ÇÆÐÇß½À´Ï´Ù." << endl;
+				cout << "íŒŒì¼ ì‚­ì œì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤." << endl;
 			}
 			break;
 		case 7:
 			inet_ntop(AF_INET, &clientaddr.sin_addr, addr, sizeof(addr));
 			closesocket(client_sock);
-			cout<<"[TCP ¼­¹ö] Å¬¶óÀÌ¾ðÆ® Á¾·á: IP ÁÖ¼Ò="<<addr<<", Æ÷Æ® ¹øÈ£="<<
+			cout<<"[TCP ì„œë²„] í´ë¼ì´ì–¸íŠ¸ ì¢…ë£Œ: IP ì£¼ì†Œ="<<addr<<", í¬íŠ¸ ë²ˆí˜¸="<<
 				ntohs(clientaddr.sin_port)<<endl;
 			return;
 		default:
 			break;
 		}
+	}
+}
+
+void acceptClient(SOCKET server_sock) {
+	while (endflag) {
+		SOCKET client_sock;
+		sockaddr_in clientaddr;
+		int addrlen = sizeof(clientaddr);
+		client_sock = accept(server_sock, (sockaddr*)&clientaddr, &addrlen);
+		if (client_sock == INVALID_SOCKET) return;
+
+		char addr[INET_ADDRSTRLEN];
+		inet_ntop(AF_INET, &clientaddr.sin_addr, addr, sizeof(addr));
+		cout << endl << "[TCP ì„œë²„] í´ë¼ì´ì–¸íŠ¸ ì ‘ì† : IP ì£¼ì†Œ=" << addr
+			<< ", í¬íŠ¸ ë²ˆí˜¸=" << ntohs(clientaddr.sin_port) << endl;
+
+		thread(recv_file, client_sock, clientaddr).detach();
 	}
 }
 int main()
@@ -193,27 +222,15 @@ int main()
 	if (::bind(server_sock, (sockaddr*)&sock_addr, sizeof(sock_addr)) == SOCKET_ERROR) return 1;
 	if (listen(server_sock, SOMAXCONN) == SOCKET_ERROR) return 1;
 
-	SOCKET client_sock;
-	sockaddr_in clientaddr;
-	int addrlen;
-
-	addrlen = sizeof(clientaddr);
-	client_sock = accept(server_sock, (sockaddr*)&clientaddr, &addrlen);
-	if (client_sock == INVALID_SOCKET) return 1;
-	
-	char addr[INET_ADDRSTRLEN];
-	inet_ntop(AF_INET, &clientaddr.sin_addr, addr, sizeof(addr));
-	cout << endl << "[TCP ¼­¹ö] Å¬¶óÀÌ¾ðÆ® Á¢¼Ó : IP ÁÖ¼Ò=" << addr
-		<< ", Æ÷Æ® ¹øÈ£=" << ntohs(clientaddr.sin_port) << endl;
-
-	thread th(recv_file, client_sock, clientaddr);
+	//thread th(recv_file, client_sock, clientaddr);
+	thread th(acceptClient, server_sock);
 
 	bool serverFlag = true;
 	while (serverFlag) {
 		int command;
-		cout << "1: ÆÄÀÏ ¸®½ºÆ® Ãâ·Â" << endl;
-		cout << "2: ÆÄÀÏ »èÁ¦" << endl;
-		cout << "3: ¼­¹ö Á¾·á" << endl;
+		cout << "1: íŒŒì¼ ë¦¬ìŠ¤íŠ¸ ì¶œë ¥" << endl;
+		cout << "2: íŒŒì¼ ì‚­ì œ" << endl;
+		cout << "3: ì„œë²„ ì¢…ë£Œ" << endl;
 		cin >> command;
 
 		if (command == 1) {
@@ -224,7 +241,7 @@ int main()
 		else if (command == 2) {
 			int num;
 			if (paths.empty()) {
-				cout << "»èÁ¦ÇÒ ÆÄÀÏÀÌ ¾ø½À´Ï´Ù." << endl;
+				cout << "ì‚­ì œí•  íŒŒì¼ì´ ì—†ìŠµë‹ˆë‹¤." << endl;
 				continue;
 			}
 
@@ -232,21 +249,22 @@ int main()
 				cout << i + 1 << " : " << paths[i] << endl;
 			}
 			
-			cout << "¸î ¹ø ÆÄÀÏÀ» »èÁ¦ÇÒ°Ç°¡¿ä? : ";
+			cout << "ëª‡ ë²ˆ íŒŒì¼ì„ ì‚­ì œí• ê±´ê°€ìš”? : ";
 			cin >> num;
 			if (num <= 0 && num > paths.size()) {
-				cout << "¾ø´Â ÆÄÀÏ ¹øÈ£¸¦ ¼±ÅÃÇß½À´Ï´Ù." << endl;
+				cout << "ì—†ëŠ” íŒŒì¼ ë²ˆí˜¸ë¥¼ ì„ íƒí–ˆìŠµë‹ˆë‹¤." << endl;
 				continue;
 			}
 			if (::remove((directoryPath + paths[num - 1]).c_str()) == 0) {
 				paths.erase(paths.begin() + (num - 1));
-				cout << "ÆÄÀÏ »èÁ¦¿¡ ¼º°øÇß½À´Ï´Ù." << endl;
+				cout << "íŒŒì¼ ì‚­ì œì— ì„±ê³µí–ˆìŠµë‹ˆë‹¤." << endl;
 			}
 			else {
-				cout << "ÆÄÀÏ »èÁ¦¿¡ ½ÇÆÐÇß½À´Ï´Ù." << endl;
+				cout << "íŒŒì¼ ì‚­ì œì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤." << endl;
 			}
 		}
 		else if (command == 3) {
+			endflag = false;
 			break;
 		}
 	}

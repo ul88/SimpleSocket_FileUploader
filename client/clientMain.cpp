@@ -19,11 +19,9 @@ void recv_file(SOCKET sock) {
 	send(sock, "1", 1, 0);
 	string file_name = buf;
 
-	recv(sock, buf, BUFSIZE, 0);
+	int file_size;
+	recv(sock, (char*)&file_size, sizeof(int), 0);
 	send(sock, "1", 1, 0);
-
-	string temp = buf;
-	int file_size = stoi(temp);
 
 	char* file_data = new char[file_size];
 	recv(sock, file_data, file_size, 0);
@@ -32,7 +30,7 @@ void recv_file(SOCKET sock) {
 	ofstream out(directoryPath + file_name, ios::out | ios::binary);
 
 	out.write(file_data, file_size);
-	cout << file_name << " ´Ù¿î·Îµå ¼º°ø" << endl;
+	cout << file_name << " ë‹¤ìš´ë¡œë“œ ì„±ê³µ" << endl;
 
 	out.close();
 	delete[] file_data;
@@ -42,12 +40,12 @@ void send_file(SOCKET sock, string path) {
 	char sign;
 	ifstream is(path, ios::in | ios::binary);
 	if (!is) {
-		cout << "ÆÄÀÏ ¿­±â ¿À·ù"<<endl;
+		cout << "íŒŒì¼ ì—´ê¸° ì˜¤ë¥˜"<<endl;
 		is.close();
 		return;
 	}
 
-	//ÆÄÀÏ¸íÀ» ¼­¹ö·Î Àü¼Û
+	//íŒŒì¼ëª…ì„ ì„œë²„ë¡œ ì „ì†¡
 	send(sock, path.c_str(), strlen(path.c_str())+1, 0);
 
 	is.seekg(0, is.end);
@@ -56,17 +54,16 @@ void send_file(SOCKET sock, string path) {
 
 	send(sock, (char*)&file_size, sizeof(int), 0);
 	
-	//ÆÄÀÏ Å©±â Àü¼Û ¿Ï·á ½ÅÈ£ º¸³¿
-	//recv(sock, &sign, 1, 0);
-	cout << "ÆÄÀÏ Å©±â Àü¼Û ¿Ï·á [" << file_size <<"]" << endl;
+	//íŒŒì¼ í¬ê¸° ì „ì†¡ ì™„ë£Œ ì‹ í˜¸ ë³´ëƒ„
+	recv(sock, &sign, 1, 0);
+	cout << "íŒŒì¼ í¬ê¸° ì „ì†¡ ì™„ë£Œ [" << file_size <<"]" << endl;
 
 	char* file_data = new char[file_size];
 	is.read(file_data, file_size);
 
 	send(sock, (const char*)file_data, file_size, 0);
-
-	//recv(sock, &sign, 1, 0);
-	cout << "¼­¹ö·Î ÆÄÀÏ Àü¼Û ¼º°ø"<<endl;
+	recv(sock, &sign, 1, 0);
+	cout << "ì„œë²„ë¡œ íŒŒì¼ ì „ì†¡ ì„±ê³µ"<<endl;
 
 	is.close();
 	delete[] file_data;
@@ -105,7 +102,7 @@ void client_file_delete() {
 	client_file_list();
 	
 	int num;
-	cout << "»èÁ¦ÇÏ°í ½ÍÀº ÆÄÀÏÀ» ¼±ÅÃÇØÁÖ¼¼¿ä: ";
+	cout << "ì‚­ì œí•˜ê³  ì‹¶ì€ íŒŒì¼ì„ ì„ íƒí•´ì£¼ì„¸ìš”: ";
 	cin >> num;
 
 	int idx = 0;
@@ -113,10 +110,10 @@ void client_file_delete() {
 		if (++idx == num) {
 			string p = iter.path().generic_string();
 			if (::remove(p.c_str()) == 0) {
-				cout << "ÆÄÀÏ »èÁ¦¿¡ ¼º°øÇß½À´Ï´Ù." << endl;
+				cout << "íŒŒì¼ ì‚­ì œì— ì„±ê³µí–ˆìŠµë‹ˆë‹¤." << endl;
 			}
 			else {
-				cout << "ÆÄÀÏ »èÁ¦¿¡ ½ÇÆÐÇß½À´Ï´Ù." << endl;
+				cout << "íŒŒì¼ ì‚­ì œì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤." << endl;
 			}
 			break;
 		}
@@ -138,34 +135,34 @@ int main()
 	while (flag) {
 		int command, num;
 		string path,temp;
-		cout << "1. ÆÄÀÏ ¾÷·Îµå" << endl;
-		cout << "2. ÆÄÀÏ ´Ù¿î·Îµå" << endl;
-		cout << "3. ¼­¹ö¿¡ Á¸ÀçÇÏ´Â ÆÄÀÏ È®ÀÎ" << endl;
-		cout << "4. ¼­¹ö¿¡ ÆÄÀÏ »èÁ¦" << endl;
-		cout << "5. Å¬¶óÀÌ¾ð¿¡ Á¸ÀçÇÏ´Â ÆÄÀÏ È®ÀÎ" << endl;
-		cout << "6. Å¬¶óÀÌ¾ðÆ®¿¡ ÆÄÀÏ »èÁ¦" << endl;
-		cout << "7. Å¬¶óÀÌ¾ðÆ® Á¾·á" << endl;
+		cout << "1. íŒŒì¼ ì—…ë¡œë“œ" << endl;
+		cout << "2. íŒŒì¼ ë‹¤ìš´ë¡œë“œ" << endl;
+		cout << "3. ì„œë²„ì— ì¡´ìž¬í•˜ëŠ” íŒŒì¼ í™•ì¸" << endl;
+		cout << "4. ì„œë²„ì— íŒŒì¼ ì‚­ì œ" << endl;
+		cout << "5. í´ë¼ì´ì–¸ì— ì¡´ìž¬í•˜ëŠ” íŒŒì¼ í™•ì¸" << endl;
+		cout << "6. í´ë¼ì´ì–¸íŠ¸ì— íŒŒì¼ ì‚­ì œ" << endl;
+		cout << "7. í´ë¼ì´ì–¸íŠ¸ ì¢…ë£Œ" << endl;
 		cin >> command;
 		cin.ignore();
 
 		switch (command) {
 		case 1:
-			cout << "Àü¼ÛÇÒ ÆÄÀÏÀÇ À§Ä¡¸¦ Àû¾îÁÖ¼¼¿ä." << endl;
+			cout << "ì „ì†¡í•  íŒŒì¼ì˜ ìœ„ì¹˜ë¥¼ ì ì–´ì£¼ì„¸ìš”." << endl;
 			getline(cin, path);
-			//°æ·Î¿¡¼­ "" »èÁ¦
+			//ê²½ë¡œì—ì„œ "" ì‚­ì œ
 			while (path.find("\"") != string::npos)
 				path.erase(find(path.begin(), path.end(), '\"'));
 
-			// ¼­¹ö¿¡ 1À» Àü¼Û
+			// ì„œë²„ì— 1ì„ ì „ì†¡
 			send(sock, "1", 1, 0);
 			
-			//ÆÄÀÏÀ» ¼­¹ö¿¡ Àü¼Û
+			//íŒŒì¼ì„ ì„œë²„ì— ì „ì†¡
 			send_file(sock, path);
 			break;
 		case 2:
 			send(sock, "2", 1, 0);
 			recv_file_list(sock);
-			cout << "´Ù¿î·ÎµåÇÏ°í ½ÍÀº ÆÄÀÏÀ» ¼±ÅÃÇØÁÖ¼¼¿ä: ";
+			cout << "ë‹¤ìš´ë¡œë“œí•˜ê³  ì‹¶ì€ íŒŒì¼ì„ ì„ íƒí•´ì£¼ì„¸ìš”: ";
 			cin >> num;
 			send(sock, to_string(num).c_str(), to_string(num).length() + 1, 0);
 			
@@ -178,7 +175,7 @@ int main()
 		case 4:
 			send(sock, "4", 1, 0);
 			recv_file_list(sock);
-			cout << "»èÁ¦ÇÏ°í ½ÍÀº ÆÄÀÏÀ» ¼±ÅÃÇØÁÖ¼¼¿ä: ";
+			cout << "ì‚­ì œí•˜ê³  ì‹¶ì€ íŒŒì¼ì„ ì„ íƒí•´ì£¼ì„¸ìš”: ";
 			cin >> num;
 			temp = to_string(num);
 			send(sock, temp.c_str(), temp.length() + 1, 0);
