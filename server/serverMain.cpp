@@ -20,12 +20,18 @@ const char* directoryPath = "download_file\\";
 vector<string> paths;
 bool endflag = true;
 
+void mkdir() {
+	const char* direct = "download_file";
+	if (!filesystem::exists(direct))
+		filesystem::create_directory(direct);
+}
+
 void init_paths() {
 	const char* direct = "download_file";
 
 	for (auto iter : filesystem::directory_iterator(direct)) {
 		string p = iter.path().generic_string();
-		p.erase(0, p.find("/")+1);
+		p.erase(0, p.find("/") + 1);
 		paths.push_back(p);
 	}
 }
@@ -52,11 +58,11 @@ void send_file(SOCKET client_sock, int idx, sockaddr_in clientaddr) {
 	is.read(file_data, file_size);
 	send(client_sock, file_data, file_size, 0);
 	recv(client_sock, &sign, 1, 0);
-	
+
 	char addr[INET_ADDRSTRLEN];
 	inet_ntop(AF_INET, &clientaddr.sin_addr, addr, sizeof(addr));
-	cout << "[TCP 서버] "<< addr << ":" <<
-		ntohs(clientaddr.sin_port) << "로 " << 
+	cout << "[TCP 서버] " << addr << ":" <<
+		ntohs(clientaddr.sin_port) << "로 " <<
 		paths[idx - 1] << "를 전송했습니다." << endl;
 
 	is.close();
@@ -79,7 +85,7 @@ void recv_file_clientToServer(SOCKET client_sock, sockaddr_in clientaddr) {
 		temp = path;
 		while (find(paths.begin(), paths.end(), temp) != paths.end()) {
 			temp = path;
-			temp.insert(temp.length()-4, to_string(++idx));
+			temp.insert(temp.length() - 4, to_string(++idx));
 		}
 		path = temp;
 
@@ -93,13 +99,13 @@ void recv_file_clientToServer(SOCKET client_sock, sockaddr_in clientaddr) {
 		cout << "파일 열기 실패" << endl;
 		return;
 	}
-	
+
 	//파일 사이즈 받아오기
 	int file_size;
 	ret = recv(client_sock, (char*)&file_size, sizeof(int), MSG_WAITALL);
 
 	char* file_data = new char[file_size];
-	
+
 	cout << "파일 사이즈 전달 완료 [" << file_size << "]" << endl;
 	send(client_sock, "1", 1, 0);
 	ret = recv(client_sock, file_data, file_size, MSG_WAITALL);
@@ -110,8 +116,8 @@ void recv_file_clientToServer(SOCKET client_sock, sockaddr_in clientaddr) {
 	char addr[INET_ADDRSTRLEN];
 	inet_ntop(AF_INET, &clientaddr.sin_addr, addr, sizeof(addr));
 	cout << "[TCP 서버] " << addr << ":" <<
-		ntohs(clientaddr.sin_port) << "가 서버로 "<<path<<"를 전송했습니다."<<endl;
-	
+		ntohs(clientaddr.sin_port) << "가 서버로 " << path << "를 전송했습니다." << endl;
+
 	out.close();
 	delete[] file_data;
 }
@@ -135,12 +141,12 @@ void recv_file(SOCKET client_sock, sockaddr_in clientaddr) {
 		case 2:
 			temp = to_string(paths.size());
 			send(client_sock, temp.c_str(), temp.length() + 1, 0);
-			//recv(client_sock, &sign, 1, 0);
+			recv(client_sock, &sign, 1, 0);
 
 			for (int i = 0;i < paths.size();i++) {
 				temp = to_string(i + 1) + " : " + paths[i];
 				send(client_sock, temp.c_str(), temp.length() + 1, 0);
-				//recv(client_sock, &sign, 1, 0);
+				recv(client_sock, &sign, 1, 0);
 			}
 			ret = recv(client_sock, buf, 1024, 0);
 			//send(client_sock, "1", 1, 0);
@@ -150,25 +156,25 @@ void recv_file(SOCKET client_sock, sockaddr_in clientaddr) {
 		case 3:
 			temp = to_string(paths.size());
 			send(client_sock, temp.c_str(), temp.length() + 1, 0);
-			//recv(client_sock, &sign, 1, 0);
+			recv(client_sock, &sign, 1, 0);
 			for (int i = 0;i < paths.size();i++) {
 				temp = to_string(i + 1) + " : " + paths[i];
 				send(client_sock, temp.c_str(), temp.length() + 1, 0);
-				//recv(client_sock, &sign, 1, 0);
+				recv(client_sock, &sign, 1, 0);
 			}
 			break;
 		case 4:
 			temp = to_string(paths.size());
 			send(client_sock, temp.c_str(), temp.length() + 1, 0);
-			//recv(client_sock, &sign, 1, 0);
+			recv(client_sock, &sign, 1, 0);
 
 			for (int i = 0;i < paths.size();i++) {
 				temp = to_string(i + 1) + " " + paths[i];
 				send(client_sock, temp.c_str(), temp.length() + 1, 0);
-				//recv(client_sock, &sign, 1, 0);
+				recv(client_sock, &sign, 1, 0);
 			}
 			ret = recv(client_sock, buf, BUFSIZE, 0);
-			//send(client_sock, "1", 1, 0);
+			send(client_sock, "1", 1, 0);
 			num = atoi(buf);
 			if (::remove((directoryPath + paths[num - 1]).c_str()) == 0) {
 				paths.erase(paths.begin() + (num - 1));
@@ -181,8 +187,8 @@ void recv_file(SOCKET client_sock, sockaddr_in clientaddr) {
 		case 7:
 			inet_ntop(AF_INET, &clientaddr.sin_addr, addr, sizeof(addr));
 			closesocket(client_sock);
-			cout<<"[TCP 서버] 클라이언트 종료: IP 주소="<<addr<<", 포트 번호="<<
-				ntohs(clientaddr.sin_port)<<endl;
+			cout << "[TCP 서버] 클라이언트 종료: IP 주소=" << addr << ", 포트 번호=" <<
+				ntohs(clientaddr.sin_port) << endl;
 			return;
 		default:
 			break;
@@ -207,25 +213,26 @@ void acceptClient(SOCKET server_sock) {
 	}
 }
 int main()
-{	
+{
+	mkdir();
 	init_paths();
 
 	WSADATA wsa;
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) return 1;
 
-	SOCKET server_sock{ socket(AF_INET, SOCK_STREAM, 0)};
+	SOCKET server_sock{ socket(AF_INET, SOCK_STREAM, 0) };
 	if (server_sock == INVALID_SOCKET) return 1;
 
 	sockaddr_in sock_addr{ AF_INET, htons(SERVERPORT) };
 	sock_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	
+
 	if (::bind(server_sock, (sockaddr*)&sock_addr, sizeof(sock_addr)) == SOCKET_ERROR) return 1;
 	if (listen(server_sock, SOMAXCONN) == SOCKET_ERROR) return 1;
 
 	//thread th(recv_file, client_sock, clientaddr);
+	bool serverFlag = true;
 	thread th(acceptClient, server_sock);
 
-	bool serverFlag = true;
 	while (serverFlag) {
 		int command;
 		cout << "1: 파일 리스트 출력" << endl;
@@ -248,7 +255,7 @@ int main()
 			for (int i = 0;i < paths.size();i++) {
 				cout << i + 1 << " : " << paths[i] << endl;
 			}
-			
+
 			cout << "몇 번 파일을 삭제할건가요? : ";
 			cin >> num;
 			if (num <= 0 && num > paths.size()) {

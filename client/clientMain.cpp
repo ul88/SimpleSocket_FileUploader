@@ -13,6 +13,12 @@ using namespace std;
 
 const char* directoryPath = "download_file\\";
 
+void mkdir() {
+	const char* direct = "download_file";
+	if (!filesystem::exists(direct))
+		filesystem::create_directory(direct);
+}
+
 void recv_file(SOCKET sock) {
 	char buf[BUFSIZE];
 	recv(sock, buf, BUFSIZE, 0);
@@ -40,30 +46,30 @@ void send_file(SOCKET sock, string path) {
 	char sign;
 	ifstream is(path, ios::in | ios::binary);
 	if (!is) {
-		cout << "파일 열기 오류"<<endl;
+		cout << "파일 열기 오류" << endl;
 		is.close();
 		return;
 	}
 
 	//파일명을 서버로 전송
-	send(sock, path.c_str(), strlen(path.c_str())+1, 0);
+	send(sock, path.c_str(), strlen(path.c_str()) + 1, 0);
 
 	is.seekg(0, is.end);
 	int file_size = is.tellg();
 	is.seekg(0, is.beg);
 
 	send(sock, (char*)&file_size, sizeof(int), 0);
-	
+
 	//파일 크기 전송 완료 신호 보냄
 	recv(sock, &sign, 1, 0);
-	cout << "파일 크기 전송 완료 [" << file_size <<"]" << endl;
+	cout << "파일 크기 전송 완료 [" << file_size << "]" << endl;
 
 	char* file_data = new char[file_size];
 	is.read(file_data, file_size);
 
 	send(sock, (const char*)file_data, file_size, 0);
 	recv(sock, &sign, 1, 0);
-	cout << "서버로 파일 전송 성공"<<endl;
+	cout << "서버로 파일 전송 성공" << endl;
 
 	is.close();
 	delete[] file_data;
@@ -98,9 +104,9 @@ void client_file_list() {
 
 void client_file_delete() {
 	const char* direct = "download_file";
-	
+
 	client_file_list();
-	
+
 	int num;
 	cout << "삭제하고 싶은 파일을 선택해주세요: ";
 	cin >> num;
@@ -122,6 +128,7 @@ void client_file_delete() {
 
 int main()
 {
+	mkdir();
 	WSADATA wsa;
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) return 1;
 
@@ -134,7 +141,7 @@ int main()
 	char sign;
 	while (flag) {
 		int command, num;
-		string path,temp;
+		string path, temp;
 		cout << "1. 파일 업로드" << endl;
 		cout << "2. 파일 다운로드" << endl;
 		cout << "3. 서버에 존재하는 파일 확인" << endl;
@@ -155,7 +162,7 @@ int main()
 
 			// 서버에 1을 전송
 			send(sock, "1", 1, 0);
-			
+
 			//파일을 서버에 전송
 			send_file(sock, path);
 			break;
@@ -165,8 +172,8 @@ int main()
 			cout << "다운로드하고 싶은 파일을 선택해주세요: ";
 			cin >> num;
 			send(sock, to_string(num).c_str(), to_string(num).length() + 1, 0);
-			
 			recv_file(sock);
+
 			break;
 		case 3:
 			send(sock, "3", 1, 0);
@@ -179,7 +186,7 @@ int main()
 			cin >> num;
 			temp = to_string(num);
 			send(sock, temp.c_str(), temp.length() + 1, 0);
-			
+
 			break;
 		case 5:
 			client_file_list();
@@ -193,7 +200,7 @@ int main()
 			break;
 		}
 	}
-	
+
 	closesocket(sock);
 	WSACleanup();
 	return 0;
